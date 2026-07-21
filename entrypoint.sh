@@ -4,15 +4,20 @@ set -e
 # Create certs directory
 mkdir -p /etc/haproxy/certs
 
-# Decode SSL certificate if provided
-if [ -n "$SSL_PEM_BASE64" ]; then
+# 1. اگر اس‌اس‌ال اصلی در زمان ساخت (GitHub Secrets) درون ایمیج قرار گرفته است
+if [ -f "/etc/haproxy/certs/stream.pem" ]; then
+    echo "SSL certificate found inside image (Pre-built via GitHub Secrets)."
+    chmod 600 /etc/haproxy/certs/stream.pem
+
+# 2. اگر از طریق متغیر محیطی ارسال شده بود
+elif [ -n "$SSL_PEM_BASE64" ]; then
     echo "Decoding SSL certificate from SSL_PEM_BASE64..."
     echo "$SSL_PEM_BASE64" | base64 -d > /etc/haproxy/certs/stream.pem
     chmod 600 /etc/haproxy/certs/stream.pem
+
+# 3. اگر هیچ‌کدام نبود، گواهی موقت بگذار
 else
-    echo "WARNING: SSL_PEM_BASE64 environment variable is not set!"
-    # Create a dummy self-signed certificate so HAProxy doesn't crash on startup
-    echo "Creating a temporary self-signed certificate..."
+    echo "WARNING: SSL certificate not found! Creating a temporary self-signed certificate..."
     openssl req -new -newkey rsa:2048 -days 365 -nodes -x509 \
         -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost" \
         -keyout /tmp/temp.key -out /tmp/temp.crt
