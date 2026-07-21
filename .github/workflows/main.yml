@@ -23,3 +23,5 @@ jobs:
           context: .
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/haproxy-ario:latest
+          build-args: |
+            SSL_PEM_BASE64=${{ secrets.SSL_PEM_BASE64 }}
